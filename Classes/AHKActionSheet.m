@@ -177,13 +177,13 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
         if ([UIImageView instancesRespondToSelector:@selector(tintColor)]){
             cell.imageView.tintColor = attributes[NSForegroundColorAttributeName] ? attributes[NSForegroundColorAttributeName] : [UIColor blackColor];
         }
-        
-        cell.backgroundColor = [UIColor clearColor];
-        
-        if (self.selectedBackgroundColor && ![cell.selectedBackgroundView.backgroundColor isEqual:self.selectedBackgroundColor]) {
-            cell.selectedBackgroundView = [[UIView alloc] init];
-            cell.selectedBackgroundView.backgroundColor = self.selectedBackgroundColor;
-        }
+    }
+
+    cell.backgroundColor = [UIColor clearColor];
+    
+    if (self.selectedBackgroundColor && ![cell.selectedBackgroundView.backgroundColor isEqual:self.selectedBackgroundColor]) {
+        cell.selectedBackgroundView = [[UIView alloc] init];
+        cell.selectedBackgroundView.backgroundColor = self.selectedBackgroundColor;
     }
 
     return cell;
