@@ -11,7 +11,8 @@
 typedef NS_ENUM(NSInteger, AHKActionSheetButtonType) {
     AHKActionSheetButtonTypeDefault = 0,
 	AHKActionSheetButtonTypeDisabled,
-    AHKActionSheetButtonTypeDestructive
+    AHKActionSheetButtonTypeDestructive,
+    AHKActionSheetButtonTypeCustom
 };
 
 @class AHKActionSheet;
@@ -40,6 +41,8 @@ typedef void(^AHKActionSheetHandler)(AHKActionSheet *actionSheet);
  *  See "Advanced" example in the example project to see it used.
  */
 @property (strong, nonatomic) UIColor *cancelButtonShadowColor UI_APPEARANCE_SELECTOR;
+/// Color of the cancel button background color
+@property (strong, nonatomic) UIColor *cancelButtonBackgroundColor UI_APPEARANCE_SELECTOR;
 /// Boxed (@YES, @NO) boolean value (enabled by default). Isn't supported on iOS 6.
 @property (strong, nonatomic) NSNumber *automaticallyTintButtonImages UI_APPEARANCE_SELECTOR;
 /// Boxed boolean value. Useful when adding buttons without images (in that case text looks better centered). Disabled by default.
@@ -100,6 +103,8 @@ typedef void(^AHKActionSheetHandler)(AHKActionSheet *actionSheet);
  *  @param handler A completion handler block to execute when a dismissal animation (after the user tapped on the button) has finished.
  */
 - (void)addButtonWithTitle:(NSString *)title image:(UIImage *)image type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler;
+
+- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellIdentifier:(NSString *)aCellIdentifier type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler;
 
 /// Displays the action sheet.
 - (void)show;

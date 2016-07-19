@@ -12,7 +12,6 @@
 #import "UIImage+AHKAdditions.h"
 #import "UIWindow+AHKAdditions.h"
 
-
 static const NSTimeInterval kDefaultAnimationDuration = 0.5f;
 // Length of the range at which the blurred background is being hidden when the user scrolls the tableView to the top.
 static const CGFloat kBlurFadeRangeSize = 200.0f;
@@ -34,6 +33,12 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 @property (strong, nonatomic) UIImage *image;
 @property (nonatomic) AHKActionSheetButtonType type;
 @property (strong, nonatomic) AHKActionSheetHandler handler;
+
+// Used for custom cell
+@property (nonatomic) Class customCellClass;
+@property (strong, nonatomic) NSString *customCellIdentifier;
+@property (nonatomic) SEL customCellBindMethod;
+@property (strong, nonatomic) id customCellData;
 @end
 
 @implementation AHKActionSheetItem
@@ -120,41 +125,64 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:kCellIdentifier forIndexPath:indexPath];
+    UITableViewCell *cell;
+    
     AHKActionSheetItem *item = self.items[(NSUInteger)indexPath.row];
-
+    
     NSDictionary *attributes = nil;
-    switch (item.type)
-    {
+    switch (item.type){
         case AHKActionSheetButtonTypeDefault:
+            cell = [tableView dequeueReusableCellWithIdentifier:kCellIdentifier forIndexPath:indexPath];
             attributes = self.buttonTextAttributes;
             break;
         case AHKActionSheetButtonTypeDisabled:
+            cell = [tableView dequeueReusableCellWithIdentifier:kCellIdentifier forIndexPath:indexPath];
             attributes = self.disabledButtonTextAttributes;
             cell.selectionStyle = UITableViewCellSelectionStyleNone;
             break;
         case AHKActionSheetButtonTypeDestructive:
+            cell = [tableView dequeueReusableCellWithIdentifier:kCellIdentifier forIndexPath:indexPath];
             attributes = self.destructiveButtonTextAttributes;
+            break;
+        case AHKActionSheetButtonTypeCustom:
+            cell = [tableView dequeueReusableCellWithIdentifier:item.customCellIdentifier];
+            attributes = self.buttonTextAttributes;
             break;
     }
 
-    NSAttributedString *attrTitle = [[NSAttributedString alloc] initWithString:item.title attributes:attributes];
-    cell.textLabel.attributedText = attrTitle;
-    cell.textLabel.textAlignment = [self.buttonTextCenteringEnabled boolValue] ? NSTextAlignmentCenter : NSTextAlignmentLeft;
-
-    // Use image with template mode with color the same as the text (when enabled).
-    BOOL useTemplateMode = [UIImage instancesRespondToSelector:@selector(imageWithRenderingMode:)] && [self.automaticallyTintButtonImages boolValue];
-    cell.imageView.image = useTemplateMode ? [item.image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] : item.image;
-
-    if ([UIImageView instancesRespondToSelector:@selector(tintColor)]){
-        cell.imageView.tintColor = attributes[NSForegroundColorAttributeName] ? attributes[NSForegroundColorAttributeName] : [UIColor blackColor];
+    if (item.type == AHKActionSheetButtonTypeCustom) {
+        if ([cell respondsToSelector:item.customCellBindMethod]) {
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+            [cell performSelector:item.customCellBindMethod withObject:item.customCellData];
+        }
+        else{
+            if (!cell) {
+                NSAssert(cell, @"Unable to instantiate cell, check cell class name and id");
+            }
+            else{
+                NSAssert([cell respondsToSelector:item.customCellBindMethod], @"Undefined selector for cell instance assigned to customCellBindMethod property");
+            }
+        }
     }
-
-    cell.backgroundColor = [UIColor clearColor];
-
-    if (self.selectedBackgroundColor && ![cell.selectedBackgroundView.backgroundColor isEqual:self.selectedBackgroundColor]) {
-        cell.selectedBackgroundView = [[UIView alloc] init];
-        cell.selectedBackgroundView.backgroundColor = self.selectedBackgroundColor;
+    else{
+        NSAttributedString *attrTitle = [[NSAttributedString alloc] initWithString:item.title attributes:attributes];
+        cell.textLabel.attributedText = attrTitle;
+        cell.textLabel.textAlignment = [self.buttonTextCenteringEnabled boolValue] ? NSTextAlignmentCenter : NSTextAlignmentLeft;
+        
+        // Use image with template mode with color the same as the text (when enabled).
+        BOOL useTemplateMode = [UIImage instancesRespondToSelector:@selector(imageWithRenderingMode:)] && [self.automaticallyTintButtonImages boolValue];
+        cell.imageView.image = useTemplateMode ? [item.image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] : item.image;
+        
+        if ([UIImageView instancesRespondToSelector:@selector(tintColor)]){
+            cell.imageView.tintColor = attributes[NSForegroundColorAttributeName] ? attributes[NSForegroundColorAttributeName] : [UIColor blackColor];
+        }
+        
+        cell.backgroundColor = [UIColor clearColor];
+        
+        if (self.selectedBackgroundColor && ![cell.selectedBackgroundView.backgroundColor isEqual:self.selectedBackgroundColor]) {
+            cell.selectedBackgroundView = [[UIView alloc] init];
+            cell.selectedBackgroundView.backgroundColor = self.selectedBackgroundColor;
+        }
     }
 
     return cell;
@@ -256,6 +284,18 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
     item.image = image;
     item.type = type;
     item.handler = handler;
+    [self.items addObject:item];
+}
+
+
+- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellIdentifier:(NSString *)aCellIdentifier type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler{
+    AHKActionSheetItem *item = [[AHKActionSheetItem alloc] init];
+    item.type = type;
+    item.handler = handler;
+    item.customCellClass = aCellClass;
+    item.customCellIdentifier = aCellIdentifier;
+    item.customCellData = info;
+    
     [self.items addObject:item];
 }
 
@@ -446,6 +486,11 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 
     self.cancelButton = cancelButton;
 
+    // Background color
+    if (self.cancelButtonBackgroundColor) {
+        [self.cancelButton setBackgroundColor:self.cancelButtonBackgroundColor];
+    }
+    
     // add a small shadow/glow above the button
     if (self.cancelButtonShadowColor) {
         self.cancelButton.clipsToBounds = NO;
@@ -480,6 +525,13 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
     tableView.delegate = self;
     tableView.dataSource = self;
     [tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:kCellIdentifier];
+    
+    for (AHKActionSheetItem *item in self.items) {
+        if (item.type == AHKActionSheetButtonTypeCustom) {
+            [tableView registerClass:item.customCellClass forCellReuseIdentifier:item.customCellIdentifier];
+        }
+    }
+    
     [self insertSubview:tableView aboveSubview:self.blurredBackgroundView];
     // move the content below the screen, ready to be animated in -show
     tableView.contentInset = UIEdgeInsetsMake(CGRectGetHeight(self.bounds), 0, 0, 0);
