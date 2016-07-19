@@ -37,8 +37,9 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 // Used for custom cell
 @property (nonatomic) Class customCellClass;
 @property (strong, nonatomic) NSString *customCellIdentifier;
-@property (nonatomic) SEL customCellBindMethod;
+@property (nonatomic) SEL customCellSelector;
 @property (strong, nonatomic) id customCellData;
+@property (assign) NSInteger customCellRowHeight;
 @end
 
 @implementation AHKActionSheetItem
@@ -151,16 +152,16 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
     }
 
     if (item.type == AHKActionSheetButtonTypeCustom) {
-        if ([cell respondsToSelector:item.customCellBindMethod]) {
+        if ([cell respondsToSelector:item.customCellSelector]) {
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-            [cell performSelector:item.customCellBindMethod withObject:item.customCellData];
+            [cell performSelector:item.customCellSelector withObject:item.customCellData];
         }
         else{
             if (!cell) {
                 NSAssert(cell, @"Unable to instantiate cell, check cell class name and id");
             }
             else{
-                NSAssert([cell respondsToSelector:item.customCellBindMethod], @"Undefined selector for cell instance assigned to customCellBindMethod property");
+                NSAssert([cell respondsToSelector:item.customCellSelector], @"Undefined selector for cell instance assigned to customCellBindMethod property");
             }
         }
     }
@@ -201,7 +202,13 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return self.buttonHeight;
+    AHKActionSheetItem *item = self.items[(NSUInteger)indexPath.row];
+    if (item.type == AHKActionSheetButtonTypeCustom) {
+        return item.customCellRowHeight;
+    }
+    else{
+        return self.buttonHeight;
+    }
 }
 
 -(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
@@ -288,15 +295,17 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 }
 
 
-- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellBindMethod:(SEL)aCellBindSelector type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler{
+- (void)addButtonUsingCellClass:(Class)aCellClass WithCellSelector:(SEL)aCellSelector andSelectorArgumentObject:(id)anObject andRowHeight:(NSInteger)aRowHeight andType:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler{
+    
     AHKActionSheetItem *item = [[AHKActionSheetItem alloc] init];
     item.type = type;
     item.handler = handler;
     item.customCellClass = aCellClass;
-    item.customCellBindMethod = aCellBindSelector;
+    item.customCellSelector = aCellSelector;
+    item.customCellRowHeight = aRowHeight;
+    item.customCellData = anObject;
     item.customCellIdentifier = [aCellClass description];
-    item.customCellData = info;
-    
+
     [self.items addObject:item];
 }
 
