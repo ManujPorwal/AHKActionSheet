@@ -288,12 +288,13 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 }
 
 
-- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellIdentifier:(NSString *)aCellIdentifier type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler{
+- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellBindMethod:(SEL)aCellBindSelector type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler{
     AHKActionSheetItem *item = [[AHKActionSheetItem alloc] init];
     item.type = type;
     item.handler = handler;
     item.customCellClass = aCellClass;
-    item.customCellIdentifier = aCellIdentifier;
+    item.customCellBindMethod = aCellBindSelector;
+    item.customCellIdentifier = [aCellClass description];
     item.customCellData = info;
     
     [self.items addObject:item];

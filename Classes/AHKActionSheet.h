@@ -104,7 +104,7 @@ typedef void(^AHKActionSheetHandler)(AHKActionSheet *actionSheet);
  */
 - (void)addButtonWithTitle:(NSString *)title image:(UIImage *)image type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler;
 
-- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellIdentifier:(NSString *)aCellIdentifier type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler;
+- (void)addButtonWithContentDescriptionInfo:(id)info UsingCellClass:(Class)aCellClass WithCellBindMethod:(SEL)aCellBindSelector type:(AHKActionSheetButtonType)type handler:(AHKActionSheetHandler)handler;
 
 /// Displays the action sheet.
 - (void)show;
