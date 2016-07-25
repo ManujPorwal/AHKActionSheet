@@ -346,7 +346,21 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
 
 
         // manual calculation of table's contentSize.height
-        CGFloat tableContentHeight = [self.items count] * self.buttonHeight + CGRectGetHeight(self.tableView.tableHeaderView.frame);
+        
+        CGFloat tableContentHeight;
+        
+        for (AHKActionSheetItem *anItem in self.items) {
+            if (anItem.type == AHKActionSheetButtonTypeCustom) {
+                tableContentHeight += anItem.customCellRowHeight;
+            }
+            else{
+                tableContentHeight += self.buttonHeight;
+            }
+        }
+        
+        tableContentHeight += CGRectGetHeight(self.tableView.tableHeaderView.frame);
+
+        //CGFloat tableContentHeight = [self.items count] * self.buttonHeight + CGRectGetHeight(self.tableView.tableHeaderView.frame);
 
         CGFloat topInset;
         BOOL buttonsFitInWithoutScrolling = tableContentHeight < CGRectGetHeight(self.tableView.frame) * (1.0 - kTopSpaceMarginFraction);
@@ -358,6 +372,7 @@ static const CGFloat kCancelButtonShadowHeightRatio = 0.333f;
             topInset = (CGFloat)round(CGRectGetHeight(self.tableView.frame) * kTopSpaceMarginFraction);
         }
         self.tableView.contentInset = UIEdgeInsetsMake(topInset, 0, 0, 0);
+        self.tableView.contentOffset = CGPointMake(0, -topInset);
 
         self.tableView.bounces = [self.cancelOnPanGestureEnabled boolValue] || !buttonsFitInWithoutScrolling;
     };
